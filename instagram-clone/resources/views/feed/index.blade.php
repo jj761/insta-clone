@@ -1,7 +1,6 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
 <x-app-layout>
     <div class="max-w-lg mx-auto py-8 px-4 space-y-6">
-
         {{-- Stories Row --}}
         <div class="flex gap-4 overflow-x-auto pb-2">
             {{-- Upload Your Story --}}
@@ -27,6 +26,7 @@
                     <span class="text-xs text-gray-600">{{ $story->user->username ?? $story->user->name }}</span>
                 </a>
             @endforeach
+
         </div>
 
         <hr class="border-gray-200">

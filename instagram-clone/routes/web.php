@@ -6,6 +6,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StoryController;
 use App\Http\Controllers\UserController;
+use App\Livewire\AdminDashboard;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -35,6 +36,10 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/stories', [StoryController::class, 'store'])->name('stories.store');
     Route::get('/stories/{story}', [StoryController::class, 'show'])->name('stories.show');
+
+    Route::get('/admin', AdminDashboard::class)
+        ->middleware(['auth', 'admin'])
+        ->name('admin.dashboard');
 
 });
 
