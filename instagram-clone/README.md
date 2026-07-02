@@ -1,58 +1,321 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Instagram Clone — Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel 13 backend serving two separate interfaces: a REST API consumed by the Next.js frontend, and a Blade/Livewire web interface with its own session-based auth.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tech Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| | |
+|---|---|
+| Framework | Laravel 13 |
+| PHP | 8.5 |
+| Database | MySQL 8.0 |
+| API Auth | Laravel Sanctum (Bearer tokens) |
+| Web Auth | Laravel Breeze (session) |
+| Admin UI | Livewire v4 |
+| CSS | Tailwind CSS v4 + Vite |
+| Queue | Database driver |
+| Mail | Queued on registration |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Setup
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Requirements
+- PHP 8.4+
+- Composer
+- MySQL 8.0
+- Node.js 18+ (for Vite/Tailwind compilation)
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Installation
 
 ```bash
-composer require laravel/boost --dev
+cd instagram-clone
 
-php artisan boost:install
+composer install
+npm install
+
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Environment
 
-## Contributing
+Edit `.env` and set:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```env
+DB_DATABASE=your_db
+DB_USERNAME=your_user
+DB_PASSWORD=your_password
 
-## Code of Conduct
+QUEUE_CONNECTION=database
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+MAIL_MAILER=smtp
+MAIL_HOST=...
+MAIL_PORT=587
+MAIL_USERNAME=...
+MAIL_PASSWORD=...
+MAIL_FROM_ADDRESS=noreply@example.com
+```
 
-## Security Vulnerabilities
+### Database
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan migrate
+php artisan storage:link
+```
 
-## License
+### Running
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+# Terminal 1 — API + web server
+php artisan serve
+
+# Terminal 2 — Queue worker (required for welcome emails)
+php artisan queue:work
+
+# Terminal 3 — Vite (required for Blade/admin UI)
+npm run dev
+```
+
+---
+
+## Project Structure
+
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Api/                    # REST API (Sanctum token auth)
+│   │   │   ├── AuthController.php
+│   │   │   ├── FeedController.php
+│   │   │   ├── PostController.php
+│   │   │   ├── StoryController.php
+│   │   │   ├── FollowController.php
+│   │   │   └── UserController.php
+│   │   ├── Auth/                   # Breeze session auth controllers
+│   │   ├── FeedController.php      # Blade feed
+│   │   ├── PostController.php      # Blade post management
+│   │   ├── StoryController.php     # Blade stories
+│   │   ├── FollowController.php    # Blade follow/unfollow
+│   │   └── UserController.php      # Blade user profiles + search
+│   └── Middleware/
+│       └── EnsureUserIsAdmin.php   # 403 for non-admins on /admin
+├── Jobs/
+│   └── SendWelcomeEmail.php        # Dispatched on registration
+├── Livewire/
+│   └── AdminDashboard.php          # Full-page component, stats display
+├── Mail/
+│   └── WelcomeMail.php
+└── Models/
+    ├── User.php
+    ├── Post.php
+    └── Story.php
+
+database/migrations/
+├── create_users_table.php
+├── add_profile_fields_to_users_table.php   # username, bio, avatar
+├── create_posts_table.php
+├── create_follows_table.php
+├── create_stories_table.php
+├── create_personal_access_tokens_table.php # Sanctum
+└── add_is_admin_to_users_table.php
+
+resources/views/
+├── layouts/
+│   ├── admin.blade.php             # Livewire admin layout
+│   └── navigation.blade.php        # Nav with admin link gated by is_admin
+└── livewire/
+    └── admin-dashboard.blade.php
+```
+
+---
+
+## Database Schema
+
+### `users`
+| Column | Type | Notes |
+|---|---|---|
+| id | bigint | PK |
+| name | string | |
+| email | string | unique |
+| username | string | unique |
+| password | string | bcrypt |
+| bio | text | nullable |
+| avatar | string | nullable, relative storage path |
+| is_admin | boolean | default false |
+| email_verified_at | timestamp | nullable |
+
+### `posts`
+| Column | Type | Notes |
+|---|---|---|
+| id | bigint | PK |
+| user_id | bigint | FK → users |
+| image_path | string | relative storage path, supports video |
+| caption | text | nullable |
+
+### `stories`
+| Column | Type | Notes |
+|---|---|---|
+| id | bigint | PK |
+| user_id | bigint | FK → users |
+| image_path | string | images only (jpg/jpeg/png) |
+| created_at | timestamp | `updated_at` disabled |
+
+### `follows`
+| Column | Type | Notes |
+|---|---|---|
+| follower_id | bigint | FK → users |
+| following_id | bigint | FK → users |
+
+---
+
+## REST API Reference
+
+Base URL: `http://127.0.0.1:8000/api`
+
+All protected routes require: `Authorization: Bearer <token>`
+
+### Auth
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/register` | None | Creates user, dispatches welcome email, returns token |
+| POST | `/login` | None | Returns token |
+| POST | `/logout` | Required | Revokes current token |
+| GET | `/user` | Required | Returns authenticated user object |
+
+**Register request body:**
+```json
+{
+  "name": "string, required",
+  "email": "string, required, unique",
+  "username": "string, required, unique",
+  "password": "string, min:8"
+}
+```
+
+**Login request body:**
+```json
+{
+  "email": "string, required",
+  "password": "string, required"
+}
+```
+
+**Auth response:**
+```json
+{
+  "user": { "id": 1, "name": "...", "username": "...", ... },
+  "token": "plaintext-sanctum-token"
+}
+```
+
+---
+
+### Feed
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/feed` | Required | Posts from followed users, newest first, with user eager-loaded |
+
+---
+
+### Posts
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/posts` | Required | Create post. Multipart form. |
+| GET | `/posts/{id}` | Required | Single post with user |
+| DELETE | `/posts/{id}` | Required | Delete own post. Returns 403 if not owner. |
+
+**POST `/posts` — form fields:**
+| Field | Type | Required |
+|---|---|---|
+| image | file | Yes — jpg, jpeg, png, mp4, mov |
+| caption | string | No |
+
+---
+
+### Stories
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/stories` | Required | Stories from self + followed users, newest first |
+| POST | `/stories` | Required | Create story. Multipart form. |
+| GET | `/stories/{id}` | Required | Single story with user |
+
+**POST `/stories` — form fields:**
+| Field | Type | Required |
+|---|---|---|
+| image | file | Yes — jpg, jpeg, png only |
+
+---
+
+### Users
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/users/{id}` | Required | Profile: user object + posts + follower/following counts + follower list |
+| GET | `/users/search?q=` | Required | Search by username or name (LIKE) |
+
+**GET `/users/{id}` response shape:**
+```json
+{
+  "user": { ... },
+  "posts_count": 12,
+  "followers_count": 5,
+  "following_count": 3,
+  "posts": [ ... ],
+  "followers": [ { "id": 2 }, ... ]
+}
+```
+
+---
+
+### Follow
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/follow/{userId}` | Required | Follow a user. Returns 422 if following self. |
+| DELETE | `/follow/{userId}` | Required | Unfollow a user. |
+
+---
+
+## Web Routes (Blade)
+
+Session auth via Laravel Breeze.
+
+| Route | Controller | Notes |
+|---|---|---|
+| GET `/dashboard` | FeedController | Feed page |
+| GET `/posts/create` | PostController | Create post form |
+| POST `/posts` | PostController | Store post |
+| GET `/posts/{id}` | PostController | View post |
+| DELETE `/posts/{id}` | PostController | Delete post |
+| GET `/users/{user}` | UserController | Profile page |
+| GET `/search` | UserController | User search |
+| POST `/follow/{userId}` | FollowController | Follow |
+| DELETE `/follow/{userId}` | FollowController | Unfollow |
+| GET `/stories/{id}` | StoryController | View story |
+| POST `/stories` | StoryController | Create story |
+| GET `/admin` | AdminDashboard (Livewire) | Admin only, 403 otherwise |
+
+---
+
+## Admin Dashboard
+
+Livewire full-page component at `/admin`.
+
+- Displays: total users (excluding admins), total posts, total follows, total stories
+- Access: visible in navbar only to users with `is_admin = true`
+- Enforced: `EnsureUserIsAdmin` middleware returns 403 for non-admins
+
+**Grant admin access:**
+```bash
+php artisan tinker
+User::find(1)->update(['is_admin' => true]);
+```
+
+---
