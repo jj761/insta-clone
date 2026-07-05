@@ -4,7 +4,7 @@ A full-stack Instagram clone built as a learning project. The backend is a Larav
 
 ---
 
-## Architecture
+## Architecture specifications 
 
 ```
 insta-clone/
